@@ -1,28 +1,29 @@
 {
     "workers": 50,
+    "live": true,
     "patterns": [
 	{
 	    "title": "checkin",
 	    "requests": [
 		{
-		    "url": "dev.vcarl.com",
+		    "url": "http://dev.vcarl.com",
 		    "method": "GET",
 		    "data": {},
-		    "content-type": "",
+		    "content-type": ""
 		},
 		{
-		    "url": "dev.vcarl.com/api/checkin",
+		    "url": "http://dev.vcarl.com/api/checkin",
 		    "method": "POST",
-		    "data" {
+		    "data": {
 			"device_id": "10101010101",
 			"fields": "{\"device_id\":\"111111111111111\",\"type\":\"location\",\"data\":{\"num_cell\":0,\"speed\":0,\"bearing\":0,\"num_lac\":0,\"num_sat\":7,\"longitude\":-83.75132845,\"latitude\":42.28357511,\"accuracy\":19,\"num_ap\":0}}",
 			"api_key": "4wz9ajxejfih3ai",
 			"timestamp": "1404921667498",
 			"hash": "2a557b3402062b3f2419acbf1059e3ea0ccb292728f2a7ea2b5d211b11733f38"
-		    }
-		    "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+		    },
+		    "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
 		}
 	    ]
-	},
+	}
     ]
 }

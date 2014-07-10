@@ -18,6 +18,7 @@ func flood(spatterns chan []reqBody, times chan struct{}) {
 			req.Req.Body = ioutil.NopCloser(strings.NewReader(req.Body))
 			res, err := cl.Do(req.Req)
 			if err != nil {
+				log.Print("%#v\n", req.Req)
 				log.Print(err)
 				continue
 			}

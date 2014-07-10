@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"time"
 	"net/url"
+	"encoding/json"
 	//"strings"
 )
 
@@ -21,6 +22,24 @@ type reqBody struct {
 	Req *http.Request
 }
 
+//structs for config
+type Config struct {
+	Workers int `json:"workers"`
+	Patterns []JsonPattern `json:"patterns"`
+}
+
+type JsonPattern struct {
+	Title string `json:"title"`
+	Reqs []JsonReq `json:"requests"`
+}
+
+type JsonReq struct {
+	URL string `json:"url"`
+	Method string `json:"method"`
+	Data map[string]string `json:"data"`
+	CType string `json:"content-type"`
+}
+
 func init() {
 	patternsGlobal = make(chan []reqBody)
 	times = make(chan struct{}, 1)
@@ -28,20 +47,53 @@ func init() {
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
+	
+	infile, err := os.Open("config.json")
+	defer infile.Close()
+	if err != nil { panic(err) }
+	
+	dec := json.NewDecoder(infile)
+	
+	config := new(Config)
+	err = dec.Decode(config)
+	if err != nil { panic(err) }
+
+	fmt.Println("%#v\n", config)
 
 	// URL encoded values for API
+	/*
 	values := make(url.Values)
 	values.Add("device_id", "10101010101")
 	values.Add("fields", "{\"device_id\":\"111111111111111\",\"type\":\"location\",\"data\":{\"num_cell\":0,\"speed\":0,\"bearing\":0,\"num_lac\":0,\"num_sat\":7,\"longitude\":-83.75132845,\"latitude\":42.28357511,\"accuracy\":19,\"num_ap\":0}}")
 	values.Add("api_key", "4wz9ajxejfih3ai")
 	values.Add("timestamp", "1404921667498")
 	values.Add("hash", "2a557b3402062b3f2419acbf1059e3ea0ccb292728f2a7ea2b5d211b11733f38")
+        */
 
 	reqs := [][]reqBody{{}}
 
-	pattern := []reqBody{}
-
-	api, err := http.NewRequest("POST", "http://a2b.local/api/checkin", nil)
+	for _,pat := range config.Patterns {
+		pattern := []reqBody{}
+		for _, req := range pat.Reqs {
+			hreq, err := http.NewRequest(req.Method, req.URL, nil)
+			if err != nil { panic(err) }
+			if req.CType != "" {
+				hreq.Header.Add("Content-Type", req.CType)
+			}
+			reqb := reqBody{"", hreq}
+			if req.Data != nil {
+				values := make(url.Values)
+				for k,v := range req.Data {
+					values.Add(k, v)
+				}
+				reqb.Body = values.Encode()
+			}
+			pattern = append(pattern, reqb)
+		}
+		reqs = append(reqs, pattern)
+	}
+	/*
+	api, err := http.NewRequest("POST", "http://dev.vcarl.com/api/checkin", nil)
 	if err != nil { panic(err) }
 	api.Header.Add("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
 	apiReq := reqBody{values.Encode(), api}
@@ -54,17 +106,13 @@ func main() {
 
 
 	reqs = append(reqs, pattern)
+        */
 
-	if err != nil {
-		fmt.Print(err)
-		os.Exit(1)
-	}
-	
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 
 	stpchan := make(chan struct{})
-	go callFlood(reqs, 1, stpchan)
+	go callFlood(reqs, config.Workers, stpchan)
 	_ = <-c
 	stpchan <- struct{}{}
 	time.Sleep(50 * time.Millisecond)
