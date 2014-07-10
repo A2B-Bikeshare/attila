@@ -5,18 +5,24 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	//"io/ioutil"
 	"runtime"
 	"time"
 	"net/url"
-	"strings"
+	//"strings"
 )
 
-var patternsGlobal chan []http.Request
+var patternsGlobal chan []reqBody
 var times chan struct{}
-var v url.Values
+
+// The way request should have been implemented
+type reqBody struct {
+	Body string
+	Req *http.Request
+}
 
 func init() {
-	patternsGlobal = make(chan []http.Request)
+	patternsGlobal = make(chan []reqBody)
 	times = make(chan struct{}, 1)
 }
 
@@ -30,17 +36,21 @@ func main() {
 	values.Add("api_key", "4wz9ajxejfih3ai")
 	values.Add("timestamp", "1404921667498")
 	values.Add("hash", "2a557b3402062b3f2419acbf1059e3ea0ccb292728f2a7ea2b5d211b11733f38")
-	v = values
-	
-	reqs := [][]http.Request{{}}
 
+	reqs := [][]reqBody{{}}
 
-	pattern := []http.Request{}
-	api, err := http.NewRequest("POST", "http://dev.vcarl.com/api/checkin", strings.NewReader(values.Encode()))
+	pattern := []reqBody{}
+
+	api, err := http.NewRequest("POST", "http://a2b.local/api/checkin", nil)
+	if err != nil { panic(err) }
 	api.Header.Add("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-	pattern = append(pattern, *api)
+	apiReq := reqBody{values.Encode(), api}
+	pattern = append(pattern, apiReq)
+
 	main, err := http.NewRequest("GET", "http://dev.vcarl.com", nil)
-	pattern = append(pattern, *main)
+	if err != nil { panic(err) }
+	mainReq := reqBody{"", main}
+	pattern = append(pattern, mainReq)
 
 
 	reqs = append(reqs, pattern)

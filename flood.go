@@ -11,12 +11,12 @@ import (
 )
 
 // read from a channel of requests and execute; don't record anything
-func flood(spatterns chan []http.Request, times chan struct{}) {
+func flood(spatterns chan []reqBody, times chan struct{}) {
 	cl := &http.Client{}
 	for pattern := range spatterns {
 		for _,req := range pattern {
-			req.Body = ioutil.NopCloser(strings.NewReader(v.Encode()))
-			res, err := cl.Do(&req)
+			req.Req.Body = ioutil.NopCloser(strings.NewReader(req.Body))
+			res, err := cl.Do(req.Req)
 			if err != nil {
 				log.Print(err)
 				continue
@@ -28,7 +28,7 @@ func flood(spatterns chan []http.Request, times chan struct{}) {
 }
 
 // call flood start the flood, then starts plotting
-func callFlood(reqs [][]http.Request, concurrency int, stchan chan struct{}) {
+func callFlood(reqs [][]reqBody, concurrency int, stchan chan struct{}) {
 	for i := 0; i < concurrency; i++ {
 		go flood(patternsGlobal, times)
 	}
