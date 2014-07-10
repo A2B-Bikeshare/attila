@@ -1,3 +1,5 @@
 # Untracked Files
 *.json
+*~
+attila
 config.json
