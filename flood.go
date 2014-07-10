@@ -3,52 +3,44 @@ package main
 import (
 	"github.com/aybabtme/uniplot/spark"
 	"log"
-	//"math/rand"
+	"math/rand"
 	"net/http"
-	"net/http/httputil"
 	"strings"
 	"io/ioutil"
 	"time"
 )
 
 // read from a channel of requests and execute; don't record anything
-func flood(sreqs chan http.Request, times chan struct{}) {
+func flood(spatterns chan []http.Request, times chan struct{}) {
 	cl := &http.Client{}
-	for req := range sreqs {
-		req.Body = ioutil.NopCloser(strings.NewReader(v.Encode()))
-		reqCopy := req
-		reqCopy.Body = ioutil.NopCloser(strings.NewReader(v.Encode()))
-		dump, err := httputil.DumpRequest(&reqCopy, true)
-		if err != nil { panic(err) }
-		log.Printf("%s", dump)
-
-		res, err := cl.Do(&req)
-		if err != nil {
-			log.Print(err)
-			continue
+	for pattern := range spatterns {
+		for _,req := range pattern {
+			req.Body = ioutil.NopCloser(strings.NewReader(v.Encode()))
+			res, err := cl.Do(&req)
+			if err != nil {
+				log.Print(err)
+				continue
+			}
+			if res.Body != nil {res.Body.Close()}
+			times <- struct{}{}
 		}
-		dump, err = httputil.DumpResponse(res, true)
-		if err != nil { panic(err) }
-		log.Printf("%s", dump)
- 		if res.Body != nil {res.Body.Close()}
-		times <- struct{}{}
 	}
 }
 
 // call flood start the flood, then starts plotting
-func callFlood(reqs []http.Request, concurrency int, stchan chan struct{}) {
+func callFlood(reqs [][]http.Request, concurrency int, stchan chan struct{}) {
 	for i := 0; i < concurrency; i++ {
-		go flood(reqsGlobal, times)
+		go flood(patternsGlobal, times)
 	}
 	plotStop := make(chan struct{})
 	go plotTimes(plotStop)
 
 	for {
 		select {
-		case reqsGlobal <- reqs[0]: //reqs[rand.Intn(len(reqs))]:
+		case patternsGlobal <- reqs[rand.Intn(len(reqs))]:
 		case <-stchan:
 			plotStop <- struct{}{}
-			close(reqsGlobal)
+			close(patternsGlobal)
 			return
 		}
 	}
