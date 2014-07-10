@@ -82,21 +82,6 @@ func main() {
 		}
 		reqs = append(reqs, pattern)
 	}
-	/*
-	api, err := http.NewRequest("POST", "http://dev.vcarl.com/api/checkin", nil)
-	if err != nil { panic(err) }
-	api.Header.Add("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-	apiReq := reqBody{values.Encode(), api}
-	pattern = append(pattern, apiReq)
-
-	main, err := http.NewRequest("GET", "http://dev.vcarl.com", nil)
-	if err != nil { panic(err) }
-	mainReq := reqBody{"", main}
-	pattern = append(pattern, mainReq)
-
-
-	reqs = append(reqs, pattern)
-        */
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
