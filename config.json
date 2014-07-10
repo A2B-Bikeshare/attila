@@ -1,6 +1,7 @@
 {
     "workers": 50,
     "live": true,
+    "privateKey": "secret",
     "patterns": [
 	{
 	    "title": "checkin",
