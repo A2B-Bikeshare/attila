@@ -10,6 +10,8 @@ import (
 	"time"
 	"net/url"
 	"encoding/json"
+	"strconv"
+	"crypto/sha256"	
 	//"strings"
 )
 
@@ -25,6 +27,9 @@ type reqBody struct {
 //structs for config
 type Config struct {
 	Workers int `json:"workers"`
+	Live bool `json:"live"`
+	pubKey string `json:"publicKey"`
+	prvKey string `json:"privateKey"`
 	Patterns []JsonPattern `json:"patterns"`
 }
 
@@ -48,6 +53,8 @@ func init() {
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	
+	fmt.Println(runtime.NumCPU())
+
 	infile, err := os.Open("config.json")
 	defer infile.Close()
 	if err != nil { panic(err) }
@@ -71,13 +78,20 @@ func main() {
 				hreq.Header.Add("Content-Type", req.CType)
 			}
 			reqb := reqBody{"", hreq}
+			values := make(url.Values)
+			if config.Live {
+				values.Add("timestamp", strconv.FormatInt(time.Now().UnixNano() / 1000000, 10))
+				toHash := config.prvKey + config.pubKey + strconv.FormatInt(time.Now().UnixNano() / 1000000, 10)
+				hash := sha256.Sum256([]byte(toHash))
+				values.Add("hash", string(hash[:]))		
+			}
 			if req.Data != nil {
-				values := make(url.Values)
 				for k,v := range req.Data {
 					values.Add(k, v)
 				}
-				reqb.Body = values.Encode()
+				
 			}
+			reqb.Body = values.Encode()
 			pattern = append(pattern, reqb)
 		}
 		reqs = append(reqs, pattern)
