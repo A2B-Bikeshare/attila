@@ -17,6 +17,8 @@ import (
 
 var patternsGlobal chan []reqBody
 var times chan struct{}
+var fail chan struct{}
+var failProp float64
 
 // The way request should have been implemented
 type reqBody struct {
@@ -106,4 +108,5 @@ func main() {
 	stpchan <- struct{}{}
 	time.Sleep(50 * time.Millisecond)
 	fmt.Print("\nExited normally\n")
+	fmt.Printf("Proportion of requests that failed: %f\n", failProp)
 }
